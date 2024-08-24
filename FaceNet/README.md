@@ -71,13 +71,12 @@ Mục tiêu của Triplet Loss là tối thiểu hoá khoảng cách giữa 2 b�
 - Ảnh Anchor và Positive là khác nhau nhất: để sao cho $d(A, P)$ lớn nhất. Tức là với 1 bức ảnh của bạn bây giờ và bức ảnh bạn lúc nhỏ, mô hình học được 2 bức ảnh này là của cùng 1 người thì mô hình mới thực sự thông minh.
 
 Triplot function luôn kì vọng:
-\[
-d(A, P) < d(A, N)
-\]
-Để tăng mức độ phân biệt chúng ta cộng thêm vào vế trái của biểu thức 1 hệ số biên gọi là $\alpha$. 
->*Hệ số biên $\alpha$ sẽ giúp cho mô hình không học cách làm cho khoảng cách giữa các cặp positive và negative gần bằng nhau, điều này không đảm bảo được các đặc trưng được phân biết 1 cách rõ ràng.*
+$d(A, P) < d(A, N)$
 
->*Hệ số biên $\alpha$ lớn sẽ đòi hỏi mô hình học các đặc trưng phân biệt mạnh mẽ hơn. Một giá trị $\alpha$ nhỏ ít đòi hỏi hơn, nhưng có thể không đủ đảm bảo tính phân biệt tốt giữa các đặc trưng.*
+Để tăng mức độ phân biệt chúng ta cộng thêm vào vế trái của biểu thức 1 hệ số biên gọi là $\alpha$. 
+Hệ số biên $\alpha$ sẽ giúp cho mô hình không học cách làm cho khoảng cách giữa các cặp positive và negative gần bằng nhau, điều này không đảm bảo được các đặc trưng được phân biết 1 cách rõ ràng.
+
+Hệ số biên $\alpha$ lớn sẽ đòi hỏi mô hình học các đặc trưng phân biệt mạnh mẽ hơn. Một giá trị $\alpha$ nhỏ ít đòi hỏi hơn, nhưng có thể không đủ đảm bảo tính phân biệt tốt giữa các đặc trưng.
 
 $d(A, P) + \alpha < d(A, N)$
 $\Rightarrow ||f(A) - f(P)||^2_2 + \alpha <= ||f(A) - f(N)||^2_2$
@@ -92,6 +91,59 @@ $\mathcal{L}(A, P, N) = \sum_{i=0}^nmax(|f(A_i) - f(P_i)||^2_2 -||f(A_i) - f(N_i
 `Các bức ảnh nhận diện đúng thì luôn nhỏ hơn 0, ta không quan tâmm đến vấn đề đó nên ta để hàm max giữa nó và số 0. Ta chỉ quan tâm đến các nhận diện sai làm hàm loss >= 0`
 
 
+# III. Mô hình Google Inception - V1 (2014)
+![alt text](image_file/image8.png)
 
+Mạng Inception-V1 đã giành chiến thắng ở cuộc thi ImageNet năm 2015. Kiến trúc này đã trả lời 1 câu hỏi lớn trong mạng CNN đó là sử dụng `kernel-size` với kích thước bao nhiêu thì hợp lý. Các kiến trúc mạng neuron trước đó đều sử dụng bộ lọc với kich thược đa dạng: `11x11`, `5x5`, `3x3` cho tới nhỏ nhất là `1x1`. Một khám phá được đưa ra là sử dụng đồng thời các bộ lọc này trong 1 khối sẽ mang lại hiệu quả đó gọi là khối `inception`.
+**Khối Inception:**
 
+- Khối inception sẽ bao gồm 4 nhánh song song. Các bộ lọc lần lượt là `1x1`, `3x3`, `5x5` được áp dụng trong inception module giúp trích lọc được đa dạng đặc trưng trên những vùng nhận thức có kích thước khác nhau.
+- Ở đầu các nhánh 1, 2, 4 từ trên xuống, các phép tích chập `1x1` được sử dụng trên từng điểm ảnh như 1 kết nối `fully-connected` nhằm mục đích giảm độ sâu kênh và số lượng tham số của mô hình. Ví dụ ở block trước có kích thước là `12 x 12 x 256`. Sau khi áp dụng  32 bộ lọc `1x1` thì không thay đổi kích thước chiều dài và chiều rộng nhưng sẽ làm giảm số chiều xuống còn 32. Như vậy ở những layer phía sau đó, chúng ta chỉ cần khởi tạo các bộ lọc có chiều sâu là 32 thay vì 256. Do đó số lượng tham số sẽ giảm đi 1 cách đáng kể. 
+- Nhánh thứ 3 từ trên xuống giúp chúng ta giảm chiều dữ liệu bằng  một layer `max-pooling` kích thước `3x3` và sau đó áp dụng bộ lọc kích thước `1x1` để thay đổi số kênh 
+- Các nhánh áp dụng padding và stride sao cho đầu ra có cùng kích thước với chiều dài và chiều rộng. Sau đó concatenate toàn bộ kết quả đầu ra của các khối theo kênh để thu được output có kích thước bằng với input.
+- Khối Inception được lặp lại 7 lần trong kiến trúc Inception-V1. Toàn bộ mạng bao gồm 22 layers, lớn hơn gấp đôi so với VGG-16. Nhờ áp dụng tích chập `1x1` giúp tiết kiệm số lượng tham số.
+
+# IV. ResNet50
+![alt text](image_file/image9.png)
+
+ResNet là kiến trúc được sử dụng phổ biến nhất ở thời điểm hiện tại. ResNet cũng là kiến trúc sớm nhất áp dụng batch normalization. Mặc dù là một mạng rất sâu khi có số lượng layer lên tới 152 nhưng nhờ áp dụng những kỹ thuật đặc biệt mà ta sẽ tìm hiểu bên dưới nên kích thước của ResNet50 chỉ khoảng 26 triệu tham số. Kiến trúc với ít tham số nhưng hiệu quả của ResNet đã mang lại chiến thắng trong cuộc thi ImageNet năm 2015.
+
+Những kiến trúc trước đây thường cải tiến độ chính xác nhờ gia tăng chiều sâu của mạng CNN. Nhưng thực nghiệm cho thấy đến một ngưỡng độ sâu nào đó thì độ chính xác của mô hình sẽ bão hòa và thậm chí phản tác dụng và làm cho mô hình kém chính xác hơn. Khi đi qua quá nhiều tầng độ sâu có thể làm thông tin gốc bị mất đi thì các nhà nghiên cứu của Microsoft đã giải quyết vấn đề này trên ResNet bằng cách sử dụng kết nối tắt.
+
+Các kết nối tắt (skip connection) giúp giữ thông tin không bị mất bằng cách kết nối từ layer sớm trước đó tới layer phía sau và bỏ qua một vài layers trung gian. Trong các kiến trúc base network CNN của các mạng YOLOv2, YOLOv3 và gần đây là YOLOv4 bạn sẽ thường xuyên thấy các kết nối tắt được áp dụng.
+
+ResNet có khối tích chập (Convolutional Bock, chính là Conv block trong hình) sử dụng bộ lọc kích thước 3 x 3 giống với của InceptionNet. Khối tích chập bao gồm 2 nhánh tích chập trong đó một nhánh áp dụng tích chập 1 x 1 trước khi cộng trực tiếp vào nhánh còn lại.
+
+Khối xác định (Identity block) thì không áp dụng tích chập 1 x 1 mà cộng trực tiêp giá trị của nhánh đó vào nhánh còn lại.
+![alt text](image_file/image10.png)
+
+Giả sử chúng ta muốn học một hàm ánh xạ $H(x)$. Để đơn giản bạn có thể coi $H(x)$ là 1 hàm rất phức tạp và việc học trực tiếp hàm này rất khó khăn.
+**Cách tiếp cận của Residual Learning**
+Thay vì cố gắng học trực tiếp $H(x)$, chúng ta tách hàm này ra thành 2 phần:
+
+**1.Hàm nhận dạng (Identity Mapping):** Đây là hàm đơn giản nhất mà mô hình có thể học $H(x) = x$. Điều này nghĩa là đầu vào $x$ đi thẳng qua mà không bị thay đổi. 
+**2. Hàm phần dư:** Đây là hàm $F(x)$ mà chúng ta thực sự muốn học, với $F(x) = H(x) - x$. Hàm $F(x)$ đại diện cho `phần dư` mà mô hình cần học thêm để từ $x$ đến được $H(x)$
+
+*Notice: Bạn có thể hiểu 1 cách đơn giản, $x$ là kiến thức mà bạn học được trước đó. Bạn đăng kí một lớp học để học được kiên thức $H(x)$. Như vậy kiến thức $H(x)$ này sẽ là tổng hợp của kiến thức trước đó bạn học được và kiến thức bạn học thêm được từ lớp mà bạn đăng kí đúng không. Vậy trong ý tưởng của khối dư cũng vậy. Hàm mục tiêu $H(x)$ chúng ta chỉ cần học thêm phần dư $F(x)$ là kiến thức mà chúng ta học được từ lớp học thêm. Như thế sẽ đơn giản hơn rất nhiều.*
+
+# V. Kiến trúc mạng Inception-ResNet
+
+Inception-ResNet là một mạng học rất sâu. Cấu tạo của mạng cũng rất đặc biệt. Kiến trúc mạng inception-ResNet sử dụng nhiều khối mạng con như Inception-A, Inception-B, Inception-C, Reduction-A, Reduction-B, Stem. Chính nhữđặc điểm trên cho một mạng inception phần dư với hiệu năng rất tốt. Sau đây là kiến trúc mạng chi tiết:
+
+## 1. Khối STEM
+![alt text](image_file/image11.png)
+Dữ liệu sẽ lần lượt đi qua các khối tích chập được xếp chồng lên nhau để trích xuất ra các đặc trưng. Mặc dù không mới nhưng đem lại kết quả tốt.
+## 2. Khối Inception-A
+![alt text](image_file/image12.png)
+Khối Inception này gồm 3 nhánh song song. Ba nhánh đều sử dụng các tầng tích chập với `kernel_size` khác nhau để trích xuất đặc trưng. Cụ thể nhánh thứ nhất gồm 1 tầng tích chập `1x1`. Nhánh thứ nhất gồm 1 tầng tích chập `1x1`. Nhánh thứ 2 gồm 1 tầng `1x1` và `3x3`.
+Ba nhánh đều sử dụng các tầng tích chập có kích thước khác nhau để trích xuất đặc trưng. Cả 3 nhánh đều sử dụng padding và stride phù hợp đều chiều rộng và chiều cao ở đầu ra không thay đổi.
+## 3. Khối Inception-B
+![alt text](image_file/image14.png)
+Khối B bao gồm 2 nhánh và đơn giản hơn khối A. Nhánh thứ nhất chỉ gồm 1 mạng tích chập `1x1`. Nhánh thứ 2 gồm 3 lớp tích chập `1x1`, `1x7`, `7x1`. Cuối cùng là 1 tầng tích chập `1x1` đều giảm số lượng kênh. 
+## 4. Khối Reduction-A
+![alt text](image_file/image13.png)
+Khối Reduction-A gồm 3 nhánh chính. Cụ thể nhánh thứ nhất là lớp `max-pooling: 3x3`. Nhánh thứ là là 1 lớp tích chấp `3x3`. Nhánh thứ 3 gồm 3 lớp tích chập `1x1`, `3x3`, `3x3`. Ở  tầng cuối của 3 nhánh đều sử dụng `stride = 2` để giảm chiều dài và chiều rộng trước khi thực hiện concatenate.
+## 5. Khối Reduction-B
+![alt text](image_file/image15.png)
+Tương tự như khối Reduction-A, tuy nhiên Khối B gồm 4 nhánh xử lý song song.
 
